@@ -1,0 +1,9 @@
+img.ppm
+.direnv
+.envrc
+build
+cmake-build-debug
+cmake-build-release
+.idea
+Heatshimmer.gpr
+Heatshimmer.rep
