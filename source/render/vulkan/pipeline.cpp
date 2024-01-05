@@ -15,7 +15,7 @@ namespace hs::ren::vk {
         vert_shader_create_info.codeSize = vert_shader_code.size();
         vert_shader_create_info.pCode = reinterpret_cast<const uint32_t*>(vert_shader_code.data());
 
-        VK_CHECK(vkCreateShaderModule(*this->device, &vert_shader_create_info, nullptr, &this->vert_shader), "vkCreateShaderModule");
+        check(vkCreateShaderModule(*this->device, &vert_shader_create_info, nullptr, &this->vert_shader), "vkCreateShaderModule");
 
         std::vector<char> frag_shader_code = read_file(shader + ".frag.spv");
 
@@ -24,7 +24,7 @@ namespace hs::ren::vk {
         frag_shader_create_info.codeSize = frag_shader_code.size();
         frag_shader_create_info.pCode = reinterpret_cast<const uint32_t*>(frag_shader_code.data());
 
-        VK_CHECK(vkCreateShaderModule(*this->device, &frag_shader_create_info, nullptr, &this->frag_shader), "vkCreateShaderModule");
+        check(vkCreateShaderModule(*this->device, &frag_shader_create_info, nullptr, &this->frag_shader), "vkCreateShaderModule");
 
         VkPipelineShaderStageCreateInfo vert_stage_create_info = {};
         vert_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -126,14 +126,14 @@ namespace hs::ren::vk {
         descriptor_set_layout_create_info.bindingCount = bindings.size();
         descriptor_set_layout_create_info.pBindings = bindings.data();
 
-        VK_CHECK(vkCreateDescriptorSetLayout(*this->device, &descriptor_set_layout_create_info, nullptr, &this->descriptor_set_layout), "vkCreateDescriptorSetLayout");
+        check(vkCreateDescriptorSetLayout(*this->device, &descriptor_set_layout_create_info, nullptr, &this->descriptor_set_layout), "vkCreateDescriptorSetLayout");
 
         VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
         pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_create_info.setLayoutCount = 1;
         pipeline_layout_create_info.pSetLayouts = &this->descriptor_set_layout;
 
-        VK_CHECK(vkCreatePipelineLayout(*this->device, &pipeline_layout_create_info, nullptr, &this->pipeline_layout), "vkCreatePipelineLayout");
+        check(vkCreatePipelineLayout(*this->device, &pipeline_layout_create_info, nullptr, &this->pipeline_layout), "vkCreatePipelineLayout");
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
         graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -151,7 +151,7 @@ namespace hs::ren::vk {
         graphics_pipeline_create_info.renderPass = swapchain.pass();
         graphics_pipeline_create_info.subpass = 0;
 
-        VK_CHECK(vkCreateGraphicsPipelines(*this->device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &this->pipeline), "vkCreateGraphicsPipelines");
+        check(vkCreateGraphicsPipelines(*this->device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &this->pipeline), "vkCreateGraphicsPipelines");
 
         std::cout << "[VK] Pipeline created" << std::endl;
     }

@@ -53,6 +53,8 @@ add_executable(${PROJECT_NAME}
         source/file/netpbm.h
         source/render/vulkan/cmd_buffer.cpp
         source/render/vulkan/cmd_buffer.h
+        source/render/error.cpp
+        source/render/error.h
 )
 
 include_directories(source)

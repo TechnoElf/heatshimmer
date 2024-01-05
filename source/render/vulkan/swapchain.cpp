@@ -29,12 +29,12 @@ namespace hs::ren::vk {
         swapchain_create_info.clipped = VK_TRUE;
         swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(*this->device, &swapchain_create_info, nullptr, &this->swapchain), "vkCreateSwapchainKHR");
+        check(vkCreateSwapchainKHR(*this->device, &swapchain_create_info, nullptr, &this->swapchain), "vkCreateSwapchainKHR");
 
         uint32_t image_count = 0;
-        VK_CHECK(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, nullptr), "vkGetSwapchainImagesKHR");
+        check(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, nullptr), "vkGetSwapchainImagesKHR");
         this->swapchain_images = std::vector<VkImage>(image_count);
-        VK_CHECK(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, this->swapchain_images.data()), "vkGetSwapchainImagesKHR");
+        check(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, this->swapchain_images.data()), "vkGetSwapchainImagesKHR");
 
         this->image_views = std::vector<VkImageView>(image_count);
         for (uint32_t i = 0; i < image_count; i++) {
@@ -53,7 +53,7 @@ namespace hs::ren::vk {
             image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
             image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-            VK_CHECK(vkCreateImageView(*this->device, &image_view_create_info, nullptr, &this->image_views[i]), "vkCreateImageView");
+            check(vkCreateImageView(*this->device, &image_view_create_info, nullptr, &this->image_views[i]), "vkCreateImageView");
         }
 
         VkAttachmentDescription color_attachment = {};
@@ -92,7 +92,7 @@ namespace hs::ren::vk {
         render_pass_create_info.dependencyCount = 1;
         render_pass_create_info.pDependencies = &subpass_dependency;
 
-        VK_CHECK(vkCreateRenderPass(*this->device, &render_pass_create_info, nullptr, &this->render_pass), "vkCreateRenderPass");
+        check(vkCreateRenderPass(*this->device, &render_pass_create_info, nullptr, &this->render_pass), "vkCreateRenderPass");
 
         std::cout << "[VK] Swapchain created" << std::endl;
 
@@ -108,7 +108,7 @@ namespace hs::ren::vk {
             framebuffer_create_info.height = this->device.details().swap_extent.height;
             framebuffer_create_info.layers = 1;
 
-            VK_CHECK(vkCreateFramebuffer(*this->device, &framebuffer_create_info, nullptr, &this->framebuffers[i]), "vkCreateFramebuffer");
+            check(vkCreateFramebuffer(*this->device, &framebuffer_create_info, nullptr, &this->framebuffers[i]), "vkCreateFramebuffer");
         }
 
         VkCommandPoolCreateInfo command_pool_create_info = {};
@@ -116,7 +116,7 @@ namespace hs::ren::vk {
         command_pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         command_pool_create_info.queueFamilyIndex = this->device.details().selected_queue_family;
 
-        VK_CHECK(vkCreateCommandPool(*this->device, &command_pool_create_info, nullptr, &this->command_pool), "vkCreateCommandPool");
+        check(vkCreateCommandPool(*this->device, &command_pool_create_info, nullptr, &this->command_pool), "vkCreateCommandPool");
 
         VkCommandBufferAllocateInfo command_buffer_allocate_info = {};
         command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -124,7 +124,7 @@ namespace hs::ren::vk {
         command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         command_buffer_allocate_info.commandBufferCount = 1;
 
-        VK_CHECK(vkAllocateCommandBuffers(*this->device, &command_buffer_allocate_info, &this->command_buffer), "vkAllocateCommandBuffers");
+        check(vkAllocateCommandBuffers(*this->device, &command_buffer_allocate_info, &this->command_buffer), "vkAllocateCommandBuffers");
 
         std::cout << "[VK] Command buffer created" << std::endl;
     }

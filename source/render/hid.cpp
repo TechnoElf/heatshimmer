@@ -9,7 +9,7 @@
 namespace hs::ren {
     Hid::Hid() {
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-        SDL_WindowFlags window_flags = static_cast<SDL_WindowFlags>(SDL_WINDOW_VULKAN);
+        auto window_flags = static_cast<SDL_WindowFlags>(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
         this->window = SDL_CreateWindow("Heatshimmer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, win_extent.width, win_extent.height, window_flags);
 

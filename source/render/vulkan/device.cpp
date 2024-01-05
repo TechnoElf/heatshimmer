@@ -13,9 +13,9 @@ namespace hs::ren::vk {
         this->display_surface = hid.create_vk_surface(*this->instance);
 
         uint32_t physical_device_count = 0;
-        VK_CHECK(vkEnumeratePhysicalDevices(*this->instance, &physical_device_count, nullptr), "vkEnumeratePhysicalDevices");
+        check(vkEnumeratePhysicalDevices(*this->instance, &physical_device_count, nullptr), "vkEnumeratePhysicalDevices");
         std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
-        VK_CHECK(vkEnumeratePhysicalDevices(*this->instance, &physical_device_count, physical_devices.data()), "vkEnumeratePhysicalDevices");
+        check(vkEnumeratePhysicalDevices(*this->instance, &physical_device_count, physical_devices.data()), "vkEnumeratePhysicalDevices");
 
         this->available_physical_devices = std::vector<DeviceDetails>(physical_device_count);
         for (VkPhysicalDevice dev : physical_devices) {
@@ -23,9 +23,9 @@ namespace hs::ren::vk {
             vkGetPhysicalDeviceProperties(dev, &properties);
 
             uint32_t extension_count = 0;
-            VK_CHECK(vkEnumerateDeviceExtensionProperties(dev, nullptr, &extension_count, nullptr), "vkEnumerateDeviceExtensionProperties");
+            check(vkEnumerateDeviceExtensionProperties(dev, nullptr, &extension_count, nullptr), "vkEnumerateDeviceExtensionProperties");
             std::vector<VkExtensionProperties> extensions(extension_count);
-            VK_CHECK(vkEnumerateDeviceExtensionProperties(dev, nullptr, &extension_count, extensions.data()), "vkEnumerateDeviceExtensionProperties");
+            check(vkEnumerateDeviceExtensionProperties(dev, nullptr, &extension_count, extensions.data()), "vkEnumerateDeviceExtensionProperties");
 
             uint32_t queue_family_count = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, nullptr);
@@ -33,17 +33,17 @@ namespace hs::ren::vk {
             vkGetPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, queue_families.data());
 
             VkSurfaceCapabilitiesKHR capabilities;
-            VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, this->display_surface, &capabilities), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+            check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, this->display_surface, &capabilities), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
 
             uint32_t formats_count = 0;
-            VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(dev, this->display_surface, &formats_count, nullptr), "vkGetPhysicalDeviceSurfaceFormatsKHR");
+            check(vkGetPhysicalDeviceSurfaceFormatsKHR(dev, this->display_surface, &formats_count, nullptr), "vkGetPhysicalDeviceSurfaceFormatsKHR");
             std::vector<VkSurfaceFormatKHR> formats(formats_count);
-            VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(dev, this->display_surface, &formats_count, formats.data()), "vkGetPhysicalDeviceSurfaceFormatsKHR");
+            check(vkGetPhysicalDeviceSurfaceFormatsKHR(dev, this->display_surface, &formats_count, formats.data()), "vkGetPhysicalDeviceSurfaceFormatsKHR");
 
             uint32_t modes_count = 0;
-            VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(dev, this->display_surface, &modes_count, nullptr), "vkGetPhysicalDeviceSurfacePresentModesKHR");
+            check(vkGetPhysicalDeviceSurfacePresentModesKHR(dev, this->display_surface, &modes_count, nullptr), "vkGetPhysicalDeviceSurfacePresentModesKHR");
             std::vector<VkPresentModeKHR> modes(modes_count);
-            VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(dev, this->display_surface, &modes_count, modes.data()), "vkGetPhysicalDeviceSurfacePresentModesKHR");
+            check(vkGetPhysicalDeviceSurfacePresentModesKHR(dev, this->display_surface, &modes_count, modes.data()), "vkGetPhysicalDeviceSurfacePresentModesKHR");
 
             VkPhysicalDeviceMemoryProperties memory_properties;
             vkGetPhysicalDeviceMemoryProperties(dev, &memory_properties);
@@ -154,7 +154,7 @@ namespace hs::ren::vk {
         device_create_info.enabledLayerCount = this->required_device_layers.size();
         device_create_info.ppEnabledLayerNames = this->required_device_layers.data();
 
-        VK_CHECK(vkCreateDevice(this->physical_device.device, &device_create_info, nullptr, &this->device), "vkCreateDevice");
+        check(vkCreateDevice(this->physical_device.device, &device_create_info, nullptr, &this->device), "vkCreateDevice");
 
         vkGetDeviceQueue(this->device, selected_physical_device->selected_queue_family, 0, &this->graphics_and_display_queue);
 
@@ -191,7 +191,7 @@ namespace hs::ren::vk {
         create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
         VkSemaphore semaphore;
-        VK_CHECK(vkCreateSemaphore(this->device, &create_info, nullptr, &semaphore), "vkCreateSemaphore");
+        check(vkCreateSemaphore(this->device, &create_info, nullptr, &semaphore), "vkCreateSemaphore");
 
         return semaphore;
     }
@@ -202,7 +202,7 @@ namespace hs::ren::vk {
         create_info.flags = flags;
 
         VkFence fence;
-        VK_CHECK(vkCreateFence(this->device, &create_info, nullptr, &fence), "vkCreateFence");
+        check(vkCreateFence(this->device, &create_info, nullptr, &fence), "vkCreateFence");
 
         return fence;
     }
@@ -215,7 +215,7 @@ namespace hs::ren::vk {
         buffer_create_info.size = size;
 
         VkBuffer buffer;
-        VK_CHECK(vkCreateBuffer(this->device, &buffer_create_info, nullptr, &buffer), "vkCreateBuffer");
+        check(vkCreateBuffer(this->device, &buffer_create_info, nullptr, &buffer), "vkCreateBuffer");
 
         VkMemoryRequirements memory_requirements;
         vkGetBufferMemoryRequirements(this->device, buffer, &memory_requirements);
@@ -237,14 +237,14 @@ namespace hs::ren::vk {
             allocate_info.memoryTypeIndex = memory_type.value();
 
             VkDeviceMemory memory;
-            VK_CHECK(vkAllocateMemory(this->device, &allocate_info, nullptr, &memory), "vkAllocateMemory");
+            check(vkAllocateMemory(this->device, &allocate_info, nullptr, &memory), "vkAllocateMemory");
 
-            VK_CHECK(vkBindBufferMemory(this->device, buffer, memory, 0), "vkBindBufferMemory");
+            check(vkBindBufferMemory(this->device, buffer, memory, 0), "vkBindBufferMemory");
 
             return {buffer, memory};
         } else {
             vkDestroyBuffer(this->device, buffer, nullptr);
-            VK_CHECK(VK_ERROR_UNKNOWN, "vkGetBufferMemoryRequirements");
+            check(VK_ERROR_UNKNOWN, "vkGetBufferMemoryRequirements");
             return {nullptr, nullptr};
         }
     }
@@ -267,7 +267,7 @@ namespace hs::ren::vk {
         image_create_info.flags = 0;
 
         VkImage image;
-        VK_CHECK(vkCreateImage(this->device, &image_create_info, nullptr, &image), "vkCreateImage");
+        check(vkCreateImage(this->device, &image_create_info, nullptr, &image), "vkCreateImage");
 
         VkMemoryRequirements memory_requirements;
         vkGetImageMemoryRequirements(this->device, image, &memory_requirements);
@@ -288,14 +288,14 @@ namespace hs::ren::vk {
             allocate_info.memoryTypeIndex = memory_type.value();
 
             VkDeviceMemory memory;
-            VK_CHECK(vkAllocateMemory(this->device, &allocate_info, nullptr, &memory), "vkAllocateMemory");
+            check(vkAllocateMemory(this->device, &allocate_info, nullptr, &memory), "vkAllocateMemory");
 
-            VK_CHECK(vkBindImageMemory(this->device, image, memory, 0), "vkBindImageMemory");
+            check(vkBindImageMemory(this->device, image, memory, 0), "vkBindImageMemory");
 
             return {image, memory};
         } else {
             vkDestroyImage(this->device, image, nullptr);
-            VK_CHECK(VK_ERROR_UNKNOWN, "vkGetBufferMemoryRequirements");
+            check(VK_ERROR_UNKNOWN, "vkGetBufferMemoryRequirements");
             return {nullptr, nullptr};
         }
     }

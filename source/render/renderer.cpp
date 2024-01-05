@@ -24,18 +24,18 @@ namespace hs::ren {
         void* data;
 
         this->vert_buf = this->device->create_buffer(vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        VK_CHECK(vkMapMemory(**this->device, this->vert_buf.second, 0, vertices.size() * sizeof(vertices[0]), 0, &data), "vkMapMemory");
+        vk::check(vkMapMemory(**this->device, this->vert_buf.second, 0, vertices.size() * sizeof(vertices[0]), 0, &data), "vkMapMemory");
         memcpy(data, vertices.data(), vertices.size() * sizeof(vertices[0]));
         vkUnmapMemory(**this->device, this->vert_buf.second);
 
         this->ind_buf = this->device->create_buffer(indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-        VK_CHECK(vkMapMemory(**this->device, this->ind_buf.second, 0, indices.size() * sizeof(indices[0]), 0, &data), "vkMapMemory");
+        vk::check(vkMapMemory(**this->device, this->ind_buf.second, 0, indices.size() * sizeof(indices[0]), 0, &data), "vkMapMemory");
         memcpy(data, indices.data(), indices.size() * sizeof(indices[0]));
         vkUnmapMemory(**this->device, this->ind_buf.second);
 
         for (uint32_t i = 0; i < this->swapchain->frames().size(); i++) {
             this->uniform_buf.push_back(this->device->create_buffer(sizeof(vk::UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-            VK_CHECK(vkMapMemory(**this->device, this->uniform_buf[i].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
+            vk::check(vkMapMemory(**this->device, this->uniform_buf[i].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
             memcpy(data, &ubo, sizeof(vk::UniformBufferObject));
             vkUnmapMemory(**this->device, this->uniform_buf[i].second);
         }
@@ -43,7 +43,7 @@ namespace hs::ren {
         auto [img, img_w, img_h] = hs::f::load_ppm("../img.ppm");
 
         auto image_staging_buffer = this->device->create_buffer(img_w * img_h * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-        VK_CHECK(vkMapMemory(**this->device, image_staging_buffer.second, 0, img_w * img_h * 4, 0, &data), "vkMapMemory");
+        vk::check(vkMapMemory(**this->device, image_staging_buffer.second, 0, img_w * img_h * 4, 0, &data), "vkMapMemory");
         memcpy(data, img.data(), img_w * img_h * 4);
         vkUnmapMemory(**this->device, image_staging_buffer.second);
 
@@ -69,7 +69,7 @@ namespace hs::ren {
         image_view_create_info.subresourceRange.baseArrayLayer = 0;
         image_view_create_info.subresourceRange.layerCount = 1;
 
-        VK_CHECK(vkCreateImageView(**this->device, &image_view_create_info, nullptr, &this->image_view), "vkCreateImageView");
+        vk::check(vkCreateImageView(**this->device, &image_view_create_info, nullptr, &this->image_view), "vkCreateImageView");
 
         VkSamplerCreateInfo sampler_create_info = {};
         sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -89,7 +89,7 @@ namespace hs::ren {
         sampler_create_info.minLod = 0.0f;
         sampler_create_info.maxLod = 0.0f;
 
-        VK_CHECK(vkCreateSampler(**this->device, &sampler_create_info, nullptr, &this->image_sampler), "vkCreateSampler");
+        vk::check(vkCreateSampler(**this->device, &sampler_create_info, nullptr, &this->image_sampler), "vkCreateSampler");
 
         auto descriptor_pool_sizes = std::array<VkDescriptorPoolSize, 2>();
         descriptor_pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -103,7 +103,7 @@ namespace hs::ren {
         descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes.data();
         descriptor_pool_create_info.maxSets = this->uniform_buf.size();
 
-        VK_CHECK(vkCreateDescriptorPool(**this->device, &descriptor_pool_create_info, nullptr, &this->descriptor_pool), "vkCreateDescriptorPool");
+        vk::check(vkCreateDescriptorPool(**this->device, &descriptor_pool_create_info, nullptr, &this->descriptor_pool), "vkCreateDescriptorPool");
 
         std::vector<VkDescriptorSetLayout> layouts = std::vector<VkDescriptorSetLayout>(this->uniform_buf.size(), this->pipelines[0]->descriptor_layout());
         VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {};
@@ -113,7 +113,7 @@ namespace hs::ren {
         descriptor_set_allocate_info.pSetLayouts = layouts.data();
 
         this->descriptor_sets.resize(this->uniform_buf.size());
-        VK_CHECK(vkAllocateDescriptorSets(**this->device, &descriptor_set_allocate_info, this->descriptor_sets.data()), "vkAllocateDescriptorSets");
+        vk::check(vkAllocateDescriptorSets(**this->device, &descriptor_set_allocate_info, this->descriptor_sets.data()), "vkAllocateDescriptorSets");
 
         for (uint32_t i = 0; i < this->uniform_buf.size(); i++) {
             VkDescriptorBufferInfo descriptor_buffer_info = {};
@@ -184,24 +184,24 @@ namespace hs::ren {
         }
         this->ubo.view = m::Mat4::roty(y);
 
-        VK_CHECK(vkWaitForFences(**this->device, 1, &this->frame_done_fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
-        VK_CHECK(vkResetFences(**this->device, 1, &this->frame_done_fence), "vkResetFences");
+        vk::check(vkWaitForFences(**this->device, 1, &this->frame_done_fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
+        vk::check(vkResetFences(**this->device, 1, &this->frame_done_fence), "vkResetFences");
 
         uint32_t image_index;
-        VK_CHECK(vkAcquireNextImageKHR(**this->device, **this->swapchain, UINT64_MAX, this->image_available_semaphore,
+        vk::check(vkAcquireNextImageKHR(**this->device, **this->swapchain, UINT64_MAX, this->image_available_semaphore,
                                        VK_NULL_HANDLE, &image_index), "vkAcquireNextImageKHR");
 
         void* data;
-        VK_CHECK(vkMapMemory(**this->device, this->uniform_buf[image_index].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
+        vk::check(vkMapMemory(**this->device, this->uniform_buf[image_index].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
         memcpy(data, &ubo, sizeof(vk::UniformBufferObject));
         vkUnmapMemory(**this->device, this->uniform_buf[image_index].second);
 
-        VK_CHECK(vkResetCommandBuffer(this->swapchain->command(), 0), "vkResetCommandBuffer");
+        vk::check(vkResetCommandBuffer(this->swapchain->command(), 0), "vkResetCommandBuffer");
 
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        VK_CHECK(vkBeginCommandBuffer(this->swapchain->command(), &begin_info), "vkBeginCommandBuffer");
+        vk::check(vkBeginCommandBuffer(this->swapchain->command(), &begin_info), "vkBeginCommandBuffer");
 
         VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
@@ -232,7 +232,7 @@ namespace hs::ren {
 
         vkCmdEndRenderPass(this->swapchain->command());
 
-        VK_CHECK(vkEndCommandBuffer(this->swapchain->command()), "vkEndCommandBuffer");
+        vk::check(vkEndCommandBuffer(this->swapchain->command()), "vkEndCommandBuffer");
 
         VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -248,7 +248,7 @@ namespace hs::ren {
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = &this->render_done_semaphore;
 
-        VK_CHECK(vkQueueSubmit(this->device->queue(), 1, &submit_info, this->frame_done_fence), "vkQueueSubmit");
+        vk::check(vkQueueSubmit(this->device->queue(), 1, &submit_info, this->frame_done_fence), "vkQueueSubmit");
 
         std::vector<VkSwapchainKHR> swapchains = {**this->swapchain};
 
@@ -260,6 +260,6 @@ namespace hs::ren {
         present_info.pSwapchains = swapchains.data();
         present_info.pImageIndices = &image_index;
 
-        VK_CHECK(vkQueuePresentKHR(this->device->queue(), &present_info), "vkQueuePresentKHR");
+        vk::check(vkQueuePresentKHR(this->device->queue(), &present_info), "vkQueuePresentKHR");
     }
 }

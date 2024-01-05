@@ -13,7 +13,7 @@ namespace hs::ren::vk {
         command_buffer_allocate_info.commandPool = this->swapchain.pool();
         command_buffer_allocate_info.commandBufferCount = 1;
 
-        VK_CHECK(vkAllocateCommandBuffers(*this->device, &command_buffer_allocate_info, &this->command_buffer), "vkAllocateCommandBuffers");
+        check(vkAllocateCommandBuffers(*this->device, &command_buffer_allocate_info, &this->command_buffer), "vkAllocateCommandBuffers");
 
         VkCommandBufferBeginInfo command_buffer_begin_info = {};
         command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -27,15 +27,15 @@ namespace hs::ren::vk {
     }
 
     void CommandBuffer::submit() {
-        VK_CHECK(vkEndCommandBuffer(this->command_buffer), "vkEndCommandBuffer");
+        check(vkEndCommandBuffer(this->command_buffer), "vkEndCommandBuffer");
 
         VkSubmitInfo submit_info = {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &this->command_buffer;
 
-        VK_CHECK(vkQueueSubmit(this->device.queue(), 1, &submit_info, VK_NULL_HANDLE), "vkQueueSubmit");
-        VK_CHECK(vkQueueWaitIdle(this->device.queue()), "vkQueueWaitIdle");
+        check(vkQueueSubmit(this->device.queue(), 1, &submit_info, VK_NULL_HANDLE), "vkQueueSubmit");
+        check(vkQueueWaitIdle(this->device.queue()), "vkQueueWaitIdle");
     }
 
     void CommandBuffer::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) {
