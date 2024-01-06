@@ -1,14 +1,15 @@
+#include <vector>
+#include <vulkan/vulkan.h>
+#include <memory>
+#include <array>
+#include <iostream>
+
 #include "renderer.h"
 #include "util.h"
 #include "hid.h"
 #include "vulkan/uniform.h"
 #include "vulkan/cmd_buffer.h"
 #include "file/netpbm.h"
-
-#include <vector>
-#include <vulkan/vulkan.h>
-#include <memory>
-#include <array>
 
 namespace hs::ren {
     Renderer::Renderer(Hid& hid) :
@@ -23,16 +24,6 @@ namespace hs::ren {
 
         void* data;
 
-        this->vert_buf = this->device->create_buffer(vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        vk::check(vkMapMemory(**this->device, this->vert_buf.second, 0, vertices.size() * sizeof(vertices[0]), 0, &data), "vkMapMemory");
-        memcpy(data, vertices.data(), vertices.size() * sizeof(vertices[0]));
-        vkUnmapMemory(**this->device, this->vert_buf.second);
-
-        this->ind_buf = this->device->create_buffer(indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-        vk::check(vkMapMemory(**this->device, this->ind_buf.second, 0, indices.size() * sizeof(indices[0]), 0, &data), "vkMapMemory");
-        memcpy(data, indices.data(), indices.size() * sizeof(indices[0]));
-        vkUnmapMemory(**this->device, this->ind_buf.second);
-
         for (uint32_t i = 0; i < this->swapchain->frames().size(); i++) {
             this->uniform_buf.push_back(this->device->create_buffer(sizeof(vk::UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
             vk::check(vkMapMemory(**this->device, this->uniform_buf[i].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
@@ -40,7 +31,7 @@ namespace hs::ren {
             vkUnmapMemory(**this->device, this->uniform_buf[i].second);
         }
 
-        auto [img, img_w, img_h] = hs::f::load_ppm("../img.ppm");
+        auto [img, img_w, img_h] = f::load_ppm("../img.ppm");
 
         auto image_staging_buffer = this->device->create_buffer(img_w * img_h * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         vk::check(vkMapMemory(**this->device, image_staging_buffer.second, 0, img_w * img_h * 4, 0, &data), "vkMapMemory");
@@ -167,18 +158,20 @@ namespace hs::ren {
             vkDestroyBuffer(**this->device, buf, nullptr);
         }
 
-        vkFreeMemory(**this->device, this->ind_buf.second, nullptr);
-        vkDestroyBuffer(**this->device, this->ind_buf.first, nullptr);
+        for (const auto& [hash, model] : this->model_data) {
+            vkFreeMemory(**this->device, model.ind_buf.second, nullptr);
+            vkDestroyBuffer(**this->device, model.ind_buf.first, nullptr);
 
-        vkFreeMemory(**this->device, this->vert_buf.second, nullptr);
-        vkDestroyBuffer(**this->device, this->vert_buf.first, nullptr);
+            vkFreeMemory(**this->device, model.vert_buf.second, nullptr);
+            vkDestroyBuffer(**this->device, model.vert_buf.first, nullptr);
+        }
 
         vkDestroyFence(**this->device, this->frame_done_fence, nullptr);
         vkDestroySemaphore(**this->device, this->render_done_semaphore, nullptr);
         vkDestroySemaphore(**this->device, this->image_available_semaphore, nullptr);
     }
 
-    void Renderer::draw(bool pressed) {
+    void Renderer::draw(bool pressed, const str::World& world) {
         if (pressed) {
             this->y += 0.01;
         }
@@ -219,15 +212,24 @@ namespace hs::ren {
         for (auto& pipeline : this->pipelines) {
             vkCmdBindPipeline(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, **pipeline);
 
-            VkBuffer buffers[] = {this->vert_buf.first};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(this->swapchain->command(), 0, 1, buffers, offsets);
+            for (const auto& model : world.get_models()) {
+                uint64_t hash = model.get().hash();
+                if (this->model_data.contains(hash)) {
+                    const ModelData& m = this->model_data[hash];
 
-            vkCmdBindIndexBuffer(this->swapchain->command(), this->ind_buf.first, 0, VK_INDEX_TYPE_UINT16);
+                    VkBuffer buffers[] = {m.vert_buf.first};
+                    VkDeviceSize offsets[] = {0};
+                    vkCmdBindVertexBuffers(this->swapchain->command(), 0, 1, buffers, offsets);
 
-            vkCmdBindDescriptorSets(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout(), 0, 1, &descriptor_sets[image_index], 0, nullptr);
+                    vkCmdBindIndexBuffer(this->swapchain->command(), m.ind_buf.first, 0, VK_INDEX_TYPE_UINT16);
 
-            vkCmdDrawIndexed(this->swapchain->command(), indices.size(), 1, 0, 0, 0);
+                    vkCmdBindDescriptorSets(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout(), 0, 1, &descriptor_sets[image_index], 0, nullptr);
+
+                    vkCmdDrawIndexed(this->swapchain->command(), m.ind_count, 1, 0, 0, 0);
+                } else {
+                    std::cerr << "[REN] Warning: Model not loaded. Was the world not synced?" << std::endl;
+                }
+            }
         }
 
         vkCmdEndRenderPass(this->swapchain->command());
@@ -261,5 +263,36 @@ namespace hs::ren {
         present_info.pImageIndices = &image_index;
 
         vk::check(vkQueuePresentKHR(this->device->queue(), &present_info), "vkQueuePresentKHR");
+    }
+
+    void Renderer::sync(const str::World& world) {
+        this->model_data = std::map<uint64_t, ModelData>();
+
+        auto models = world.get_models();
+        for (auto model : models) {
+            auto vertices = model.get().vertices();
+            auto indices = model.get().indices();
+            uint64_t hash = model.get().hash();
+
+            if (!model_data.contains(hash)) {
+                void* data;
+
+                auto vert_buf = this->device->create_buffer(vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+                vk::check(vkMapMemory(**this->device, vert_buf.second, 0, vertices.size() * sizeof(vertices[0]), 0, &data), "vkMapMemory");
+                memcpy(data, vertices.data(), vertices.size() * sizeof(vertices[0]));
+                vkUnmapMemory(**this->device, vert_buf.second);
+
+                auto ind_buf = this->device->create_buffer(indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+                vk::check(vkMapMemory(**this->device, ind_buf.second, 0, indices.size() * sizeof(indices[0]), 0, &data), "vkMapMemory");
+                memcpy(data, indices.data(), indices.size() * sizeof(indices[0]));
+                vkUnmapMemory(**this->device, ind_buf.second);
+
+                model_data.insert_or_assign(hash, ModelData {
+                    .vert_buf = vert_buf,
+                    .ind_buf = ind_buf,
+                    .ind_count = static_cast<uint32_t>(indices.size())
+                });
+            }
+        }
     }
 }

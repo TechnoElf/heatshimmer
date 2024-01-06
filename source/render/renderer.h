@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <memory>
+#include <map>
 
 #include "hid.h"
 #include "vulkan/instance.h"
@@ -11,9 +12,24 @@
 #include "vulkan/vertex.h"
 #include "math/vec.h"
 #include "render/vulkan/uniform.h"
+#include "structure/world.h"
 
 namespace hs::ren {
+    struct ModelData {
+        std::pair<VkBuffer, VkDeviceMemory> vert_buf;
+        std::pair<VkBuffer, VkDeviceMemory> ind_buf;
+        uint32_t ind_count;
+    };
+
     class Renderer {
+    public:
+        explicit Renderer(Hid& hid);
+        ~Renderer();
+
+        void draw(bool pressed, const str::World& world);
+        void sync(const str::World& world);
+
+    private:
         std::unique_ptr<vk::Instance> instance;
         std::unique_ptr<vk::Device> device;
         std::unique_ptr<vk::Swapchain> swapchain;
@@ -23,8 +39,7 @@ namespace hs::ren {
         VkSemaphore render_done_semaphore = nullptr;
         VkFence frame_done_fence = nullptr;
 
-        std::pair<VkBuffer, VkDeviceMemory> vert_buf;
-        std::pair<VkBuffer, VkDeviceMemory> ind_buf;
+        std::map<uint64_t, ModelData> model_data;
 
         std::vector<std::pair<VkBuffer, VkDeviceMemory>> uniform_buf;
 
@@ -35,17 +50,6 @@ namespace hs::ren {
         VkImageView image_view;
         VkSampler image_sampler;
 
-        const std::vector<vk::Vertex> vertices = {
-            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}}
-        };
-
-        const std::vector<uint16_t> indices = {
-            0, 1, 2, 0, 2, 3
-        };
-
         vk::UniformBufferObject ubo = {
             m::Mat4::transform(0.0f, 0.0f, 1.0f) * m::Mat4::rotz(0.1),
             m::Mat4::roty(-0.1),
@@ -53,11 +57,5 @@ namespace hs::ren {
         };
 
         float y = 0.0;
-
-    public:
-        explicit Renderer(Hid& hid);
-        ~Renderer();
-
-        void draw(bool pressed);
     };
 }
