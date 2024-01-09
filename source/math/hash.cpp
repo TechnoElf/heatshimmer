@@ -1,8 +1,9 @@
 /*
  * Created by janis on 2024-01-06
+ * Based on the work of Aumasson and Bernstein:
+ *   https://www.aumasson.jp/siphash/siphash.pdf
  */
 
-#include <iostream>
 #include "hash.h"
 
 namespace hs::m {

@@ -1,9 +1,10 @@
 #include <iostream>
+#include <algorithm>
 #include "swapchain.h"
 #include "../util.h"
 
 namespace hs::ren::vk {
-    Swapchain::Swapchain(Device &device) : device(device) {
+    Swapchain::Swapchain(Device& device) : device(device) {
         uint32_t min_image_count = this->device.details().capabilities.minImageCount + 1;
         if (this->device.details().capabilities.maxImageCount > 0) {
             if (min_image_count > this->device.details().capabilities.maxImageCount) {
@@ -159,5 +160,93 @@ namespace hs::ren::vk {
 
     VkCommandPool Swapchain::pool() {
         return this->command_pool;
+    }
+
+    void Swapchain::recreate(Hid& hid) {
+        for (VkFramebuffer& framebuffer : this->framebuffers) {
+            vkDestroyFramebuffer(*this->device, framebuffer, nullptr);
+        }
+
+        for (VkImageView& view : this->image_views) {
+            vkDestroyImageView(*this->device, view, nullptr);
+        }
+
+        vkDestroySwapchainKHR(*this->device, this->swapchain, nullptr);
+
+        VkSurfaceCapabilitiesKHR capabilities;
+        check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(this->device.details().device, this->device.surface(), &capabilities), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+        this->device.details().capabilities = capabilities;
+
+        VkExtent2D swap_extent = hid.get_win_extent();
+        swap_extent.width = std::clamp(swap_extent.width, this->device.details().capabilities.minImageExtent.width, this->device.details().capabilities.maxImageExtent.width);
+        swap_extent.height = std::clamp(swap_extent.height, this->device.details().capabilities.minImageExtent.height, this->device.details().capabilities.maxImageExtent.height);
+        this->device.details().swap_extent = swap_extent;
+
+        uint32_t min_image_count = this->device.details().capabilities.minImageCount + 1;
+        if (this->device.details().capabilities.maxImageCount > 0) {
+            if (min_image_count > this->device.details().capabilities.maxImageCount) {
+                min_image_count = this->device.details().capabilities.maxImageCount;
+            }
+        }
+
+        VkSwapchainCreateInfoKHR swapchain_create_info = {};
+        swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapchain_create_info.surface = this->device.surface();
+        swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchain_create_info.imageFormat = this->device.details().surface_formats[this->device.details().selected_surface_format].format;
+        swapchain_create_info.imageColorSpace = this->device.details().surface_formats[this->device.details().selected_surface_format].colorSpace;
+        swapchain_create_info.imageExtent = this->device.details().swap_extent;
+        swapchain_create_info.imageArrayLayers = 1;
+        swapchain_create_info.minImageCount = min_image_count;
+        swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchain_create_info.queueFamilyIndexCount = 0;
+        swapchain_create_info.pQueueFamilyIndices = nullptr;
+        swapchain_create_info.preTransform = this->device.details().capabilities.currentTransform;
+        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchain_create_info.presentMode = this->device.details().present_modes[this->device.details().selected_present_mode];
+        swapchain_create_info.clipped = VK_TRUE;
+        swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+        check(vkCreateSwapchainKHR(*this->device, &swapchain_create_info, nullptr, &this->swapchain), "vkCreateSwapchainKHR");
+
+        uint32_t image_count = 0;
+        check(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, nullptr), "vkGetSwapchainImagesKHR");
+        this->swapchain_images = std::vector<VkImage>(image_count);
+        check(vkGetSwapchainImagesKHR(*this->device, this->swapchain, &image_count, this->swapchain_images.data()), "vkGetSwapchainImagesKHR");
+
+        this->image_views = std::vector<VkImageView>(image_count);
+        for (uint32_t i = 0; i < image_count; i++) {
+            VkImageViewCreateInfo image_view_create_info = {};
+            image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            image_view_create_info.image = this->swapchain_images[i];
+            image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_create_info.format = this->device.details().surface_formats[this->device.details().selected_surface_format].format;
+            image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_view_create_info.subresourceRange.baseMipLevel = 0;
+            image_view_create_info.subresourceRange.levelCount = 1;
+            image_view_create_info.subresourceRange.baseArrayLayer = 0;
+            image_view_create_info.subresourceRange.layerCount = 1;
+            image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+            check(vkCreateImageView(*this->device, &image_view_create_info, nullptr, &this->image_views[i]), "vkCreateImageView");
+        }
+
+        this->framebuffers = std::vector<VkFramebuffer>(image_views.size());
+
+        for (uint32_t i = 0; i < image_views.size(); ++i) {
+            VkFramebufferCreateInfo framebuffer_create_info = {};
+            framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebuffer_create_info.renderPass = this->render_pass;
+            framebuffer_create_info.attachmentCount = 1;
+            framebuffer_create_info.pAttachments = &image_views[i];
+            framebuffer_create_info.width = this->device.details().swap_extent.width;
+            framebuffer_create_info.height = this->device.details().swap_extent.height;
+            framebuffer_create_info.layers = 1;
+
+            check(vkCreateFramebuffer(*this->device, &framebuffer_create_info, nullptr, &this->framebuffers[i]), "vkCreateFramebuffer");
+        }
     }
 }

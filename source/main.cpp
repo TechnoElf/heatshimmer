@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        renderer.draw(hid.is_pressed(), world);
+        renderer.draw(hid.is_pressed(), world, hid);
     }
 
     return 0;

@@ -26,7 +26,7 @@ namespace hs::ren {
         explicit Renderer(Hid& hid);
         ~Renderer();
 
-        void draw(bool pressed, const str::World& world);
+        void draw(bool pressed, const str::World& world, Hid& hid);
         void sync(const str::World& world);
 
     private:
@@ -57,5 +57,7 @@ namespace hs::ren {
         };
 
         float y = 0.0;
+
+        bool swapchain_outdated = false;
     };
 }

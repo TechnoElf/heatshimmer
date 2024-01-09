@@ -68,6 +68,10 @@ namespace hs::ren {
     }
 
     const VkExtent2D& Hid::get_win_extent() {
+        int w, h;
+        SDL_GetWindowSize(this->window, &w, &h);
+        this->win_extent.width = w;
+        this->win_extent.height = h;
         return this->win_extent;
     }
 

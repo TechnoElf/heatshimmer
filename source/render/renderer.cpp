@@ -171,7 +171,7 @@ namespace hs::ren {
         vkDestroySemaphore(**this->device, this->image_available_semaphore, nullptr);
     }
 
-    void Renderer::draw(bool pressed, const str::World& world) {
+    void Renderer::draw(bool pressed, const str::World& world, Hid& hid) {
         if (pressed) {
             this->y += 0.01;
         }
@@ -181,8 +181,12 @@ namespace hs::ren {
         vk::check(vkResetFences(**this->device, 1, &this->frame_done_fence), "vkResetFences");
 
         uint32_t image_index;
-        vk::check(vkAcquireNextImageKHR(**this->device, **this->swapchain, UINT64_MAX, this->image_available_semaphore,
-                                       VK_NULL_HANDLE, &image_index), "vkAcquireNextImageKHR");
+        if (VkResult res = vkAcquireNextImageKHR(**this->device, **this->swapchain, UINT64_MAX, this->image_available_semaphore,
+                                                 VK_NULL_HANDLE, &image_index); res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR) {
+            this->swapchain_outdated = true;
+        } else {
+            vk::check(res, "vkAcquireNextImageKHR");
+        }
 
         void* data;
         vk::check(vkMapMemory(**this->device, this->uniform_buf[image_index].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
@@ -262,7 +266,19 @@ namespace hs::ren {
         present_info.pSwapchains = swapchains.data();
         present_info.pImageIndices = &image_index;
 
-        vk::check(vkQueuePresentKHR(this->device->queue(), &present_info), "vkQueuePresentKHR");
+        if (VkResult res = vkQueuePresentKHR(this->device->queue(), &present_info); res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR) {
+            this->swapchain_outdated = true;
+        } else {
+            vk::check(res, "vkQueuePresentKHR");
+        }
+
+        if (this->swapchain_outdated) {
+            vkDeviceWaitIdle(**this->device);
+            this->swapchain->recreate(hid);
+            this->pipelines.clear();
+            this->pipelines.push_back(std::make_unique<vk::Pipeline>(*device, *swapchain, "base"));
+            this->swapchain_outdated = false;
+        }
     }
 
     void Renderer::sync(const str::World& world) {
@@ -287,7 +303,7 @@ namespace hs::ren {
                 memcpy(data, indices.data(), indices.size() * sizeof(indices[0]));
                 vkUnmapMemory(**this->device, ind_buf.second);
 
-                model_data.insert_or_assign(hash, ModelData {
+                model_data.insert_or_assign(hash, ModelData{
                     .vert_buf = vert_buf,
                     .ind_buf = ind_buf,
                     .ind_count = static_cast<uint32_t>(indices.size())

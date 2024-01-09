@@ -28,5 +28,6 @@ namespace hs::ren::vk {
         std::vector<VkFramebuffer>& frames();
         VkRenderPass pass();
         VkCommandPool pool();
+        void recreate(Hid& hid);
     };
 }
