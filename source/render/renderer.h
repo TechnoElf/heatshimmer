@@ -26,7 +26,7 @@ namespace hs::ren {
         explicit Renderer(Hid& hid);
         ~Renderer();
 
-        void draw(bool pressed, const str::World& world, Hid& hid);
+        void draw(const str::World& world, Hid& hid);
         void sync(const str::World& world);
 
     private:
@@ -49,8 +49,6 @@ namespace hs::ren {
         std::pair<VkImage, VkDeviceMemory> texture_image;
         VkImageView image_view;
         VkSampler image_sampler;
-
-        float y = 0.0;
 
         bool swapchain_outdated = false;
     };

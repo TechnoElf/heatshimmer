@@ -168,11 +168,7 @@ namespace hs::ren {
         vkDestroySemaphore(**this->device, this->image_available_semaphore, nullptr);
     }
 
-    void Renderer::draw(bool pressed, const str::World& world, Hid& hid) {
-        if (pressed) {
-            this->y += 0.01;
-        }
-
+    void Renderer::draw(const str::World& world, Hid& hid) {
         vk::check(vkWaitForFences(**this->device, 1, &this->frame_done_fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
         vk::check(vkResetFences(**this->device, 1, &this->frame_done_fence), "vkResetFences");
 
@@ -213,7 +209,7 @@ namespace hs::ren {
                 if (this->model_data.contains(hash)) {
                     vk::UniformBufferObject ubo = {
                         objects[i].get_transform(),
-                        m::Mat4::roty(y),
+                        world.get_camera(),
                         m::Mat4::perspective()
                     };
 

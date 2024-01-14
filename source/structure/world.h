@@ -9,7 +9,7 @@
 
 #include "object.h"
 #include "render/model.h"
-
+#include "render/hid.h"
 
 namespace hs::str {
     class World {
@@ -25,10 +25,15 @@ namespace hs::str {
         void add_object(Object&& obj);
 
         [[nodiscard]] std::vector<std::reference_wrapper<const ren::Model>> get_models() const;
-
         [[nodiscard]] const std::vector<Object>& get_objects() const;
+        [[nodiscard]] m::Mat4 get_camera() const;
+
+        void update(ren::Hid& hid);
 
     private:
         std::vector<Object> objects = std::vector<Object>();
+
+        m::Vec3<float> camera_pos = {0, 0, 0};
+        m::Vec3<float> camera_rot = {0, 0, 0};
     };
 }

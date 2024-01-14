@@ -21,4 +21,29 @@ namespace hs::str {
     const std::vector<Object>& World::get_objects() const {
         return objects;
     }
+
+    m::Mat4 World::get_camera() const {
+        return m::Mat4::translate(-this->camera_pos) *
+            m::Mat4::rotz(-this->camera_rot.z) *
+            m::Mat4::roty(-this->camera_rot.y) *
+            m::Mat4::rotx(-this->camera_rot.x);
+    }
+
+    void World::update(ren::Hid& hid) {
+        if (hid.is_pressed(SDL_SCANCODE_W)) {
+            camera_pos.z += 0.01;
+        }
+
+        if (hid.is_pressed(SDL_SCANCODE_S)) {
+            camera_pos.z -= 0.01;
+        }
+
+        if (hid.is_pressed(SDL_SCANCODE_D)) {
+            camera_pos.x += 0.01;
+        }
+
+        if (hid.is_pressed(SDL_SCANCODE_A)) {
+            camera_pos.x -= 0.01;
+        }
+    }
 }

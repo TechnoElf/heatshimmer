@@ -16,8 +16,6 @@ namespace hs::ren {
 
         std::vector<const char*> vk_extensions = {};
 
-        bool pressed = false;
-
     public:
         Hid();
         ~Hid();
@@ -27,6 +25,6 @@ namespace hs::ren {
         const std::vector<const char*>& get_vk_extensions();
         VkSurfaceKHR create_vk_surface(VkInstance instance);
         const VkExtent2D& get_win_extent();
-        bool is_pressed();
+        bool is_pressed(SDL_Scancode key);
     };
 }

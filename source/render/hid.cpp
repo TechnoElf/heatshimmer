@@ -43,7 +43,7 @@ namespace hs::ren {
                 case SDL_KEYUP: {
                     if (!event.key.repeat) {
                         if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
-                            pressed = event.key.state == SDL_PRESSED;
+                            //pressed = event.key.state == SDL_PRESSED;
                         }
                     }
                     break;
@@ -75,7 +75,8 @@ namespace hs::ren {
         return this->win_extent;
     }
 
-    bool Hid::is_pressed() {
-        return this->pressed;
+    bool Hid::is_pressed(SDL_Scancode key) {
+        const uint8_t* kb_state = SDL_GetKeyboardState(nullptr);
+        return kb_state[key] == 1;
     }
 }
