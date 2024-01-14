@@ -17,4 +17,8 @@ namespace hs::str {
     void World::add_object(Object&& obj) {
         this->objects.push_back(std::move(obj));
     }
+
+    const std::vector<Object>& World::get_objects() const {
+        return objects;
+    }
 }

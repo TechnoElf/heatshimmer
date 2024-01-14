@@ -25,10 +25,7 @@ namespace hs::ren {
         void* data;
 
         for (uint32_t i = 0; i < this->swapchain->frames().size(); i++) {
-            this->uniform_buf.push_back(this->device->create_buffer(sizeof(vk::UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-            vk::check(vkMapMemory(**this->device, this->uniform_buf[i].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
-            memcpy(data, &ubo, sizeof(vk::UniformBufferObject));
-            vkUnmapMemory(**this->device, this->uniform_buf[i].second);
+            this->uniform_buf.push_back(this->device->create_buffer(sizeof(vk::UniformBufferObject) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
         }
 
         auto [img, img_w, img_h] = f::load_ppm("../img.ppm");
@@ -83,7 +80,7 @@ namespace hs::ren {
         vk::check(vkCreateSampler(**this->device, &sampler_create_info, nullptr, &this->image_sampler), "vkCreateSampler");
 
         auto descriptor_pool_sizes = std::array<VkDescriptorPoolSize, 2>();
-        descriptor_pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         descriptor_pool_sizes[0].descriptorCount = this->uniform_buf.size();
         descriptor_pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptor_pool_sizes[1].descriptorCount = this->uniform_buf.size();
@@ -123,7 +120,7 @@ namespace hs::ren {
             write_descriptor_set[0].dstBinding = 0;
             write_descriptor_set[0].dstArrayElement = 0;
             write_descriptor_set[0].descriptorCount = 1;
-            write_descriptor_set[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write_descriptor_set[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
             write_descriptor_set[0].pBufferInfo = &descriptor_buffer_info;
             write_descriptor_set[0].pTexelBufferView = nullptr;
             write_descriptor_set[0].pImageInfo = nullptr;
@@ -175,7 +172,6 @@ namespace hs::ren {
         if (pressed) {
             this->y += 0.01;
         }
-        this->ubo.view = m::Mat4::roty(y);
 
         vk::check(vkWaitForFences(**this->device, 1, &this->frame_done_fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
         vk::check(vkResetFences(**this->device, 1, &this->frame_done_fence), "vkResetFences");
@@ -187,11 +183,6 @@ namespace hs::ren {
         } else {
             vk::check(res, "vkAcquireNextImageKHR");
         }
-
-        void* data;
-        vk::check(vkMapMemory(**this->device, this->uniform_buf[image_index].second, 0, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
-        memcpy(data, &ubo, sizeof(vk::UniformBufferObject));
-        vkUnmapMemory(**this->device, this->uniform_buf[image_index].second);
 
         vk::check(vkResetCommandBuffer(this->swapchain->command(), 0), "vkResetCommandBuffer");
 
@@ -216,9 +207,26 @@ namespace hs::ren {
         for (auto& pipeline : this->pipelines) {
             vkCmdBindPipeline(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, **pipeline);
 
-            for (const auto& model : world.get_models()) {
-                uint64_t hash = model.get().hash();
+            const auto& objects = world.get_objects();
+            for (uint32_t i = 0; i < objects.size(); i++) {
+                uint64_t hash = objects[i].get_model().hash();
                 if (this->model_data.contains(hash)) {
+                    vk::UniformBufferObject ubo = {
+                        objects[i].get_transform(),
+                        m::Mat4::roty(y),
+                        m::Mat4::perspective()
+                    };
+
+                    uint32_t uniform_offset = static_cast<uint32_t>(i * sizeof(vk::UniformBufferObject));
+
+                    void* data;
+                    vk::check(vkMapMemory(**this->device, this->uniform_buf[image_index].second, uniform_offset, sizeof(vk::UniformBufferObject), 0, &data), "vkMapMemory");
+                    memcpy(data, &ubo, sizeof(vk::UniformBufferObject));
+                    vkUnmapMemory(**this->device, this->uniform_buf[image_index].second);
+
+                    uint32_t uniform_offsets[] = {uniform_offset};
+                    vkCmdBindDescriptorSets(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout(), 0, 1, &descriptor_sets[image_index], 1, uniform_offsets);
+
                     const ModelData& m = this->model_data[hash];
 
                     VkBuffer buffers[] = {m.vert_buf.first};
@@ -226,8 +234,6 @@ namespace hs::ren {
                     vkCmdBindVertexBuffers(this->swapchain->command(), 0, 1, buffers, offsets);
 
                     vkCmdBindIndexBuffer(this->swapchain->command(), m.ind_buf.first, 0, VK_INDEX_TYPE_UINT16);
-
-                    vkCmdBindDescriptorSets(this->swapchain->command(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout(), 0, 1, &descriptor_sets[image_index], 0, nullptr);
 
                     vkCmdDrawIndexed(this->swapchain->command(), m.ind_count, 1, 0, 0, 0);
                 } else {

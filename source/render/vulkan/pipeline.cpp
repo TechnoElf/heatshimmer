@@ -108,7 +108,7 @@ namespace hs::ren::vk {
 
         VkDescriptorSetLayoutBinding descriptor_set_layout_binding_uniform = {};
         descriptor_set_layout_binding_uniform.binding = 0;
-        descriptor_set_layout_binding_uniform.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_set_layout_binding_uniform.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         descriptor_set_layout_binding_uniform.descriptorCount = 1;
         descriptor_set_layout_binding_uniform.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         descriptor_set_layout_binding_uniform.pImmutableSamplers = nullptr;

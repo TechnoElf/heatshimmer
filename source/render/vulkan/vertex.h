@@ -15,9 +15,9 @@
 
 namespace hs::ren::vk {
     struct Vertex {
-        m::Vec2 pos;
-        m::Vec3 col;
-        m::Vec2 uv;
+        m::Vec2<float> pos;
+        m::Vec3<float> col;
+        m::Vec2<float> uv;
     };
 
     template<typename T>

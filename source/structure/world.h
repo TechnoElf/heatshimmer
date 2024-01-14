@@ -5,6 +5,7 @@
 #pragma once
 
 #include <vector>
+#include <iterator>
 
 #include "object.h"
 #include "render/model.h"
@@ -24,6 +25,8 @@ namespace hs::str {
         void add_object(Object&& obj);
 
         [[nodiscard]] std::vector<std::reference_wrapper<const ren::Model>> get_models() const;
+
+        [[nodiscard]] const std::vector<Object>& get_objects() const;
 
     private:
         std::vector<Object> objects = std::vector<Object>();

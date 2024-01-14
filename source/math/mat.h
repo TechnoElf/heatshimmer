@@ -5,6 +5,7 @@
 #pragma once
 
 #include "cmath"
+#include "vec.h"
 
 namespace hs::m {
     struct Mat4 {
@@ -14,8 +15,12 @@ namespace hs::m {
             return {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
         }
 
-        static constexpr Mat4 transform(float x, float y, float z) {
+        static constexpr Mat4 translate(float x, float y, float z) {
             return {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, y, z, 1.0f};
+        }
+
+        static constexpr Mat4 translate(const Vec3<float>& v) {
+            return {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, v.x, v.y, v.z, 1.0f};
         }
 
         static constexpr Mat4 perspective() {
@@ -32,6 +37,10 @@ namespace hs::m {
 
         static constexpr Mat4 rotz(float theta) {
             return {std::cos(theta), std::sin(theta), 0.0f, 0.0f, -std::sin(theta), std::cos(theta), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+        }
+
+        static constexpr Mat4 scale(const Vec3<float>& v) {
+            return {v.x, 0.0f, 0.0f, 0.0f, 0.0f, v.y, 0.0f, 0.0f, 0.0f, 0.0f, v.z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
         }
 
         constexpr Mat4 operator*(const Mat4& b) {

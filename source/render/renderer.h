@@ -50,12 +50,6 @@ namespace hs::ren {
         VkImageView image_view;
         VkSampler image_sampler;
 
-        vk::UniformBufferObject ubo = {
-            m::Mat4::transform(0.0f, 0.0f, 1.0f) * m::Mat4::rotz(0.1),
-            m::Mat4::roty(-0.1),
-            m::Mat4::perspective()
-        };
-
         float y = 0.0;
 
         bool swapchain_outdated = false;
