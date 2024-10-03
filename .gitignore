@@ -1,8 +1,4 @@
-img.ppm
-.direnv
-.envrc
-build
-cmake-build-debug
-cmake-build-release
-Heatshimmer.gpr
-Heatshimmer.rep
+/img.ppm
+/.direnv/
+/.envrc
+/target/

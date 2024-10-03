@@ -28,7 +28,7 @@ namespace hs::ren {
             this->uniform_buf.push_back(this->device->create_buffer(sizeof(vk::UniformBufferObject) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
         }
 
-        auto [img, img_w, img_h] = f::load_ppm("../img.ppm");
+        auto [img, img_w, img_h] = f::load_ppm("../../img.ppm");
 
         auto image_staging_buffer = this->device->create_buffer(img_w * img_h * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         vk::check(vkMapMemory(**this->device, image_staging_buffer.second, 0, img_w * img_h * 4, 0, &data), "vkMapMemory");

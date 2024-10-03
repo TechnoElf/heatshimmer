@@ -22,6 +22,7 @@
           glslang
           shaderc
           SDL2
+          ninja
         ];
 
         LD_LIBRARY_PATH = "${lib.makeLibraryPath nativeBuildInputs}";

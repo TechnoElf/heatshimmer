@@ -126,11 +126,16 @@ namespace hs::ren {
 
     std::vector<char> read_file(const std::string& path) {
         std::ifstream file = std::ifstream(path, std::ios::ate | std::ios::binary);
-        size_t size = file.tellg();
-        std::vector<char> buf = std::vector<char>(size);
-        file.seekg(0);
-        file.read(buf.data(), size);
-        file.close();
-        return buf;
+        if (file.is_open()) {
+            size_t size = file.tellg();
+            std::vector<char> buf = std::vector<char>(size);
+            file.seekg(0);
+            file.read(buf.data(), size);
+            file.close();
+            return buf;
+        } else {
+            std::cerr << "[VK] Could not read " << path << std::endl;
+            std::abort();
+        }
     }
 }

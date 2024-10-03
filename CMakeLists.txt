@@ -28,44 +28,44 @@ endfunction(add_shader)
 # C++ sources
 
 add_executable(${PROJECT_NAME}
-        source/main.cpp
-        source/render/hid.cpp
-        source/render/hid.h
-        source/render/renderer.cpp
-        source/render/renderer.h
-        source/render/util.h
-        source/render/util.cpp
-        source/render/vulkan/instance.cpp
-        source/render/vulkan/instance.h
-        source/render/vulkan/device.cpp
-        source/render/vulkan/device.h
-        source/render/vulkan/pipeline.cpp
-        source/render/vulkan/pipeline.h
-        source/render/vulkan/swapchain.h
-        source/render/vulkan/swapchain.cpp
-        source/math/vec.cpp
-        source/math/vec.h
-        source/render/vulkan/vertex.h
-        source/math/mat.cpp
-        source/math/mat.h
-        source/render/vulkan/uniform.h
-        source/file/netpbm.cpp
-        source/file/netpbm.h
-        source/render/vulkan/cmd_buffer.cpp
-        source/render/vulkan/cmd_buffer.h
-        source/render/error.cpp
-        source/render/error.h
-        source/structure/world.cpp
-        source/structure/world.h
-        source/render/model.cpp
-        source/render/model.h
-        source/structure/object.cpp
-        source/structure/object.h
-        source/math/hash.cpp
-        source/math/hash.h
+    src/main.cpp
+    src/render/hid.cpp
+    src/render/hid.h
+    src/render/renderer.cpp
+    src/render/renderer.h
+    src/render/util.h
+    src/render/util.cpp
+    src/render/vulkan/instance.cpp
+    src/render/vulkan/instance.h
+    src/render/vulkan/device.cpp
+    src/render/vulkan/device.h
+    src/render/vulkan/pipeline.cpp
+    src/render/vulkan/pipeline.h
+    src/render/vulkan/swapchain.h
+    src/render/vulkan/swapchain.cpp
+    src/math/vec.cpp
+    src/math/vec.h
+    src/render/vulkan/vertex.h
+    src/math/mat.cpp
+    src/math/mat.h
+    src/render/vulkan/uniform.h
+    src/file/netpbm.cpp
+    src/file/netpbm.h
+    src/render/vulkan/cmd_buffer.cpp
+    src/render/vulkan/cmd_buffer.h
+    src/render/error.cpp
+    src/render/error.h
+    src/structure/world.cpp
+    src/structure/world.h
+    src/render/model.cpp
+    src/render/model.h
+    src/structure/object.cpp
+    src/structure/object.h
+    src/math/hash.cpp
+    src/math/hash.h
 )
 
-include_directories(source)
+include_directories(src)
 
 # C++ dependencies
 
@@ -80,9 +80,9 @@ target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
 
 # Shaders
 
-add_shader(${PROJECT_NAME} source/shader/base.frag)
-add_shader(${PROJECT_NAME} source/shader/base.vert)
+add_shader(${PROJECT_NAME} src/shader/base.frag)
+add_shader(${PROJECT_NAME} src/shader/base.vert)
 
 # Options
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wpedantic)
